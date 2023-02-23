@@ -102,7 +102,6 @@ int main(void)
 			// Ativa o pino LED1_IDX (setando para nível lógico alto, apagando o LED)
 			pio_set(LED1_PIO, LED1_PIO_IDX_MASK);
 		}
-		
 		// ------------------------------------------
 				// Ligando o LED2 quando o botão 2 é apertado:
 		if (!pio_get(BUTTON2_PIO, PIO_INPUT, BUTTON2_PIO_IDX_MASK))
