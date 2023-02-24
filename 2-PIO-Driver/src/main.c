@@ -68,6 +68,8 @@
 /*  The internal debouncing filter is active. */
 #define _PIO_DEBOUNCE (1u << 3)
 
+#define _delay_ms(delay) ((delay) ? cpu_delay_ms(delay,F_CPU) : cpu_delay_us(1,F_CPU))
+
 /**
 
 \brief Define um nível de saída alto em todos os PIOs definidos em ul_mask.
@@ -189,6 +191,53 @@ void _pio_set_output(Pio *p_pio, const uint32_t ul_mask,
 	_pio_pull_up(p_pio, ul_mask, ul_pull_up_enable);
 }
 
+/**
+ * \brief 	Função recebe um ponteiro para um controlador PIO, um tipo de pino (entrada ou saída) e
+ * 			uma máscara de bits que especifica quais pinos devem ser lidos.
+
+ *
+ * \param p_pio Pointer to a PIO instance.
+ * \param ul_type PIO type.
+ * \param ul_mask Bitmask of one or more pin(s) to configure.
+ *
+ * \retval 1 at least one PIO currently has a high level.
+ * \retval 0 all PIOs have a low level.
+ */
+uint32_t _pio_get(Pio *p_pio, const pio_type_t ul_type,
+				  const uint32_t ul_mask)
+{
+	//  Cria uma variável local que será usada para armazenar o valor do registrador que contém o estado dos pinos.
+	uint32_t ul_reg;
+
+	// Verifica se o tipo de pino é uma saída (PIO_OUTPUT_0 ou PIO_OUTPUT_1) ou uma entrada (PIO_INPUT).
+	// Se for uma saída, o valor atual dos pinos é lido no registrador de saída de dados (PIO_ODSR) e armazenado na variável
+	//  ul_reg. Se for uma entrada, o valor atual dos pinos é lido no registrador de status de dados (PIO_PDSR) e armazenado
+	//  na variável ul_reg.
+	if ((ul_type == PIO_OUTPUT_0) || (ul_type == PIO_OUTPUT_1))
+	{
+		ul_reg = p_pio->PIO_ODSR;
+	}
+	else
+	{
+		ul_reg = p_pio->PIO_PDSR;
+	}
+
+	// A máscara de bits é aplicada à variável ul_reg usando o operador AND binário (&).
+	// Isso resulta em um valor binário que representa o estado de cada pino especificado pela máscara.
+	// Se o resultado for zero, isso significa que todos os pinos especificados estão em nível baixo, e a função retorna 0.
+	// Caso contrário, pelo menos um dos pinos está em nível alto, e a função retorna 1.
+	if ((ul_reg & ul_mask) == 0)
+	{
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
+}
+
+
+
 int main(void)
 {
 	// Inicializa clock
@@ -222,10 +271,11 @@ int main(void)
 	while (1)
 	{
 		// Ligando o LED1 quando o botão 1 é apertado:
-		if (!pio_get(BUTTON1_PIO, PIO_INPUT, BUTTON1_PIO_IDX_MASK))
+		if (!_pio_get(BUTTON1_PIO, PIO_INPUT, BUTTON1_PIO_IDX_MASK))
 		{
 			// Limpa o pino LED1_IDX (setando para nível lógico baixo)
 			_pio_clear(LED1_PIO, LED1_PIO_IDX_MASK);
+			_delay_ms(2000);
 		}
 		else
 		{
@@ -234,10 +284,11 @@ int main(void)
 		}
 		// ------------------------------------------
 		// Ligando o LED2 quando o botão 2 é apertado:
-		if (!pio_get(BUTTON2_PIO, PIO_INPUT, BUTTON2_PIO_IDX_MASK))
+		if (!_pio_get(BUTTON2_PIO, PIO_INPUT, BUTTON2_PIO_IDX_MASK))
 		{
 			// Limpa o pino LED2_IDX (setando para nível lógico baixo)
 			_pio_clear(LED2_PIO, LED2_PIO_IDX_MASK);
+			_delay_ms(2000);
 		}
 		else
 		{
@@ -247,10 +298,11 @@ int main(void)
 
 		// ------------------------------------------
 		// Ligando o LED3 quando o botão 3 é apertado:
-		if (!pio_get(BUTTON3_PIO, PIO_INPUT, BUTTON3_PIO_IDX_MASK))
+		if (!_pio_get(BUTTON3_PIO, PIO_INPUT, BUTTON3_PIO_IDX_MASK))
 		{
 			// Limpa o pino LED3_IDX (setando para nível lógico baixo)
 			_pio_clear(LED3_PIO, LED3_PIO_IDX_MASK);
+			_delay_ms(2000);
 		}
 		else
 		{
